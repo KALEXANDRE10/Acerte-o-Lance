@@ -1,0 +1,41 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile information",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "stripeCustomerId": { "type": "string" },
+        "subscriptionStatus": { "type": "string", "enum": ["active", "inactive", "past_due"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email"]
+    },
+    "Subscription": {
+      "title": "Subscription",
+      "description": "Stripe subscription details",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "stripeSubscriptionId": { "type": "string" },
+        "status": { "type": "string" },
+        "priceId": { "type": "string" },
+        "currentPeriodEnd": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "stripeSubscriptionId"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile document"
+    },
+    "/users/{userId}/subscriptions/{subId}": {
+      "schema": "Subscription",
+      "description": "User subscription history"
+    }
+  }
+}

@@ -1,0 +1,5 @@
+{
+  "name": "Acerte o Lance",
+  "description": "Plataforma SaaS para revendedores de veículos em leilão. Inclui análise automática de lotes via IA, cálculo de margem de lucro, gestão de pátio pessoal e autenticação de usuários.",
+  "requestFramePermissions": []
+}
