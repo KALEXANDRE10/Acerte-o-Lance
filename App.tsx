@@ -162,7 +162,6 @@ const Logo: React.FC<{ className?: string }> = ({ className }) => (
         <p className="text-[11px] font-bold text-[#C5A059] uppercase tracking-[0.2em]">Leilões Inteligentes</p>
         <div className="h-[2px] w-8 bg-[#C5A059]"></div>
       </div>
-      <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.4em] mt-2">DESDE 2026</p>
     </div>
   </div>
 );
@@ -1160,6 +1159,19 @@ const AppContent: React.FC = () => {
           </div>
         )}
       </main>
+
+      <footer className="py-20 text-center border-t border-slate-100 mt-24 bg-white">
+         <div className="flex flex-col items-center">
+            <Logo className="scale-75 mb-8 grayscale opacity-50" />
+            <div className="flex items-center justify-center gap-4 mb-4">
+                <div className="w-20 h-px bg-slate-100"></div>
+                <p className="text-[10px] font-black uppercase tracking-[0.5em] text-slate-300">ACERTE O LANCE</p>
+                <div className="w-20 h-px bg-slate-100"></div>
+            </div>
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Tecnologia Inteligente para o Mercado de Repasse</p>
+            <p className="text-[9px] text-slate-300 font-black mt-4 uppercase tracking-widest">Copyright © 2025 • Todos os Direitos Reservados</p>
+         </div>
+      </footer>
     </div>
   );
 };
