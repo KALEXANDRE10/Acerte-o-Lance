@@ -1099,11 +1099,11 @@ const AppContent: React.FC = () => {
               <div className="bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-sm flex flex-col">
                 <h3 className="text-xl font-black text-brand-navy mb-2">Pro</h3>
                 <p className="text-slate-400 text-sm mb-6">Para grandes pátios.</p>
-                <div className="text-4xl font-black text-brand-navy mb-8">R$ 197<span className="text-sm font-medium text-slate-400">/mês</span></div>
+                <div className="text-4xl font-black text-brand-navy mb-8">R$ 149,90<span className="text-sm font-medium text-slate-400">/mês</span></div>
                 <ul className="space-y-4 mb-10 flex-1">
                   <li className="flex items-center gap-3 text-sm font-medium text-slate-600">
                     <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7"/></svg>
-                    Análises Ilimitadas
+                    80 análises por mês
                   </li>
                   <li className="flex items-center gap-3 text-sm font-medium text-slate-600">
                     <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7"/></svg>

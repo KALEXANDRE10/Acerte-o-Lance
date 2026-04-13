@@ -11,7 +11,18 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "sk_test_placeholder");
+let stripe: Stripe | null = null;
+
+const getStripe = () => {
+  if (!stripe) {
+    const key = process.env.STRIPE_SECRET_KEY;
+    if (!key) {
+      throw new Error("STRIPE_SECRET_KEY is not defined in environment variables");
+    }
+    stripe = new Stripe(key);
+  }
+  return stripe;
+};
 
 async function startServer() {
   const app = express();
@@ -24,8 +35,9 @@ async function startServer() {
   app.post("/api/create-checkout-session", async (req, res) => {
     try {
       const { priceId, customerEmail } = req.body;
+      const stripeClient = getStripe();
 
-      const session = await stripe.checkout.sessions.create({
+      const session = await stripeClient.checkout.sessions.create({
         payment_method_types: ["card"],
         line_items: [
           {
@@ -55,7 +67,7 @@ async function startServer() {
   } else {
     const distPath = path.join(process.cwd(), "dist");
     app.use(express.static(distPath));
-    app.get("*", (req, res) => {
+    app.get("*all", (req, res) => {
       res.sendFile(path.join(distPath, "index.html"));
     });
   }
