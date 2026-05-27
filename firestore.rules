@@ -2,44 +2,78 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     // ===============================================================
-    // Helper Functions
+    // Global Safety Net & Helpers
     // ===============================================================
+    
     function isAuthenticated() {
       return request.auth != null;
     }
+    
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
     }
-    function hasRequiredFields(fields) {
-      return request.resource.data.keys().hasAll(fields);
+    
+    // Checks if the document at /users/{auth.uid} has role == 'admin'
+    function isAdmin() {
+      return isAuthenticated() && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
+
     function isValidEmail(email) {
       return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
     }
 
-    // ===============================================================
-    // Domain Validators
-    // ===============================================================
-    function isValidUser(data) {
-      return data.uid is string && data.uid.size() > 0 &&
-             data.email is string && isValidEmail(data.email);
+    // Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
     }
 
     // ===============================================================
     // Match Rules
     // ===============================================================
+    
     match /users/{userId} {
-      allow read: if isOwner(userId);
-      allow create: if isOwner(userId) && isValidUser(request.resource.data);
-      allow update: if isOwner(userId) && isValidUser(request.resource.data);
+      allow read: if isOwner(userId) || isAdmin();
+      
+      // Let any owner register their user profile document
+      allow create: if isOwner(userId) && 
+        request.resource.data.keys().hasAll(['email', 'role']) &&
+        request.resource.data.email is string &&
+        isValidEmail(request.resource.data.email);
+        
+      // Restrict role & subscription change to Admin, or let Owner update standard fields
+      allow update: if isAdmin() || (
+        isOwner(userId) &&
+        // Prevent owners from changing their own role or subscription plans to bypass payment constraints
+        resource.data.role == request.resource.data.role && 
+        resource.data.subscription.plan == request.resource.data.subscription.plan &&
+        resource.data.subscription.limit == request.resource.data.subscription.limit
+      );
+      
+      // Owners or admins can delete test nodes in sandbox
+      allow delete: if isOwner(userId) || isAdmin();
     }
 
-    match /users/{userId}/subscriptions/{subId} {
-      allow read: if isOwner(userId);
-      // Subscriptions are typically managed by a backend webhook, 
-      // but for this demo, we allow the owner to read.
-      // Writes should ideally be restricted to admin/system.
-      allow write: if false; 
+    match /vehicles/{vehicleId} {
+      // Allow reading owned patíos, or let admins review diagnostic pátio logs
+      allow read: if isAuthenticated() && (resource.data.authorUid == request.auth.uid || isAdmin());
+      
+      // Creating vehicle must verify ownership of the vehicle document
+      allow create: if isAuthenticated() && 
+        request.resource.data.authorUid == request.auth.uid &&
+        request.resource.data.keys().hasAll(['brand', 'model', 'authorUid']) &&
+        request.resource.data.brand is string &&
+        request.resource.data.model is string;
+        
+      allow update: if isAuthenticated() && (resource.data.authorUid == request.auth.uid || isAdmin());
+      allow delete: if isAuthenticated() && (resource.data.authorUid == request.auth.uid || isAdmin());
+    }
+
+    // Connection test node rules
+    match /test/connection {
+      allow read: if true;
+      allow write: if false;
     }
   }
 }

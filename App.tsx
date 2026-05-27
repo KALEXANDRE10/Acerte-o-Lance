@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, Component, ErrorInfo, ReactNode } f
 import { AuctionLot, CalculationParams } from './types';
 import { getCompleteVehicleData } from './services/geminiService';
 import ProfitCalculator from './components/ProfitCalculator';
+import { AdminDashboard } from './components/AdminDashboard';
 import { 
   BarChart, 
   Bar, 
@@ -171,7 +172,7 @@ const AppContent: React.FC = () => {
   const [userProfile, setUserProfile] = useState<any>(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
   const [loginLoading, setLoginLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'analysis' | 'patio' | 'plans' | 'reports'>('analysis');
+  const [activeTab, setActiveTab] = useState<'analysis' | 'patio' | 'plans' | 'reports' | 'admin'>('analysis');
   
   const [lots, setLots] = useState<AuctionLot[]>([]);
   const [patioVehicles, setPatioVehicles] = useState<any[]>([]);
@@ -370,7 +371,10 @@ const AppContent: React.FC = () => {
           sourceSite: lot.sourceSite
         }
       });
-      alert("Veículo salvo no seu pátio!");
+      // Usado notificação visual não-bloqueante segura com estado do alert do app
+      const originalError = globalError;
+      setGlobalError("✅ Veículo salvo com sucesso no seu pátio!");
+      setTimeout(() => setGlobalError(originalError), 4000);
     } catch (err) {
       handleFirestoreError(err, OperationType.CREATE, 'vehicles');
     }
@@ -381,8 +385,10 @@ const AppContent: React.FC = () => {
     if (!lot || !user || !userProfile) return;
     
     // Check limits
-    if (userProfile.usage.analysisCount >= userProfile.subscription.limit) {
-      setGlobalError(`Limite de análises atingido (${userProfile.subscription.limit}/${userProfile.subscription.limit}). Faça upgrade para continuar.`);
+    const currentUsage = userProfile?.usage?.analysisCount ?? 0;
+    const currentLimit = userProfile?.subscription?.limit ?? 2;
+    if (currentUsage >= currentLimit) {
+      setGlobalError(`Limite de análises atingido (${currentUsage}/${currentLimit}). Faça upgrade para continuar.`);
       setActiveTab('plans');
       return;
     }
@@ -424,8 +430,10 @@ const AppContent: React.FC = () => {
     if (!inputUrl || !user || !userProfile) return;
 
     // Check limits
-    if (userProfile.usage.analysisCount >= userProfile.subscription.limit) {
-      setGlobalError(`Limite de análises atingido (${userProfile.subscription.limit}/${userProfile.subscription.limit}). Faça upgrade para continuar.`);
+    const currentUsage = userProfile?.usage?.analysisCount ?? 0;
+    const currentLimit = userProfile?.subscription?.limit ?? 2;
+    if (currentUsage >= currentLimit) {
+      setGlobalError(`Limite de análises atingido (${currentUsage}/${currentLimit}). Faça upgrade para continuar.`);
       setActiveTab('plans');
       return;
     }
@@ -573,6 +581,12 @@ const AppContent: React.FC = () => {
           >
             Planos
           </button>
+          <button 
+            onClick={() => setActiveTab('admin')}
+            className={`text-[10px] font-black uppercase tracking-[0.2em] transition-all ${activeTab === 'admin' ? 'text-brand-navy border-b-2 border-brand-gold pb-1' : 'text-slate-400 hover:text-brand-navy'}`}
+          >
+            Administração & Webhook
+          </button>
         </div>
 
         <div className="flex items-center gap-6">
@@ -589,6 +603,29 @@ const AppContent: React.FC = () => {
         </div>
       </nav>
 
+      {/* Mobile-Friendly Navigation Ribbon */}
+      <div className="flex md:hidden bg-white border-b border-slate-100 overflow-x-auto whitespace-nowrap p-3 gap-2 px-4 shadow-sm sticky top-32 z-40">
+        {[
+          { tab: 'analysis', label: 'Análise' },
+          { tab: 'patio', label: 'Meu Pátio' },
+          { tab: 'reports', label: 'Relatórios' },
+          { tab: 'plans', label: 'Planos' },
+          { tab: 'admin', label: 'Admin (Stripe)' }
+        ].map(item => (
+          <button
+            key={item.tab}
+            onClick={() => setActiveTab(item.tab as any)}
+            className={`text-[10px] font-black uppercase tracking-wider px-3 py-2 rounded-xl transition-all ${
+              activeTab === item.tab
+                ? 'bg-brand-navy text-brand-gold shadow-md'
+                : 'text-slate-400 bg-slate-50 hover:bg-slate-100'
+            }`}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
+
       <main className="max-w-7xl mx-auto px-4 py-8">
         {activeTab === 'analysis' ? (
           <>
@@ -597,7 +634,7 @@ const AppContent: React.FC = () => {
                 <div className="flex items-center gap-3">
                   <div className="w-2 h-2 bg-brand-gold rounded-full animate-pulse"></div>
                   <p className="text-[10px] font-black text-brand-navy uppercase tracking-widest">
-                    Plano {userProfile.subscription.plan} • {userProfile.usage.analysisCount}/{userProfile.subscription.limit} análises usadas
+                    Plano {userProfile?.subscription?.plan || 'free'} • {userProfile?.usage?.analysisCount ?? 0}/{userProfile?.subscription?.limit ?? 2} análises usadas
                   </p>
                 </div>
                 <button 
@@ -813,7 +850,7 @@ const AppContent: React.FC = () => {
               </p>
             </div>
 
-            {userProfile?.subscription.plan === 'free' ? (
+            {(userProfile?.subscription?.plan || 'free') === 'free' ? (
               <div className="bg-white rounded-[2.5rem] p-16 border-2 border-slate-100 text-center shadow-2xl shadow-brand-navy/5">
                 <div className="w-20 h-20 bg-brand-gold/10 rounded-full flex items-center justify-center mx-auto mb-8">
                   <Lock className="w-10 h-10 text-brand-gold" />
@@ -1039,6 +1076,8 @@ const AppContent: React.FC = () => {
               </div>
             )}
           </div>
+        ) : activeTab === 'admin' ? (
+          <AdminDashboard user={user} userProfile={userProfile} setActiveTab={setActiveTab} />
         ) : (
           <div className="space-y-12">
             <div className="text-center max-w-3xl mx-auto">
@@ -1088,7 +1127,7 @@ const AppContent: React.FC = () => {
                   </li>
                 </ul>
                 <button 
-                  onClick={() => handleCheckout('price_starter_id')}
+                  onClick={() => handleCheckout('price_1TWQqw3kNDEcWHY9Ga409L8Q')}
                   className="w-full py-4 rounded-2xl font-black uppercase tracking-widest text-xs bg-brand-gold text-white hover:bg-brand-gold/90 transition-all shadow-lg shadow-brand-gold/20 active:scale-95"
                 >
                   Assinar Agora
@@ -1115,7 +1154,7 @@ const AppContent: React.FC = () => {
                   </li>
                 </ul>
                 <button 
-                  onClick={() => handleCheckout('price_pro_id')}
+                  onClick={() => handleCheckout('price_1TWRCB3kNDEcWHY9Ik4PwovV')}
                   className="w-full py-4 rounded-2xl font-black uppercase tracking-widest text-xs bg-brand-navy text-white hover:bg-slate-800 transition-all shadow-lg active:scale-95"
                 >
                   Assinar Agora

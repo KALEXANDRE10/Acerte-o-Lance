@@ -29,9 +29,37 @@ async function startServer() {
   const PORT = 3000;
 
   app.use(cors());
-  app.use(express.json());
+  app.use(express.json({
+    verify: (req: any, res, buf) => {
+      req.rawBody = buf;
+    }
+  }));
 
   // API Routes
+  app.post("/api/webhook", async (req: any, res) => {
+    const sig = req.headers["stripe-signature"];
+    const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+    let event;
+
+    try {
+      const stripeClient = getStripe();
+      if (endpointSecret && sig && req.rawBody) {
+        event = stripeClient.webhooks.constructEvent(req.rawBody, sig, endpointSecret);
+      } else {
+        event = req.body;
+      }
+    } catch (err: any) {
+      console.error(`❌ Webhook Error: ${err.message}`);
+      return res.status(400).send(`Webhook Error: ${err.message}`);
+    }
+
+    console.log(`🔔 Stripe Webhook recebido: Tipo do evento = ${event?.type}`);
+
+    // Responder imediatamente com 200 OK para a Stripe para certificar taxa de entrega perfeita de 100%
+    res.json({ received: true });
+  });
+
   app.post("/api/create-checkout-session", async (req, res) => {
     try {
       const { priceId, customerEmail } = req.body;

@@ -2,40 +2,56 @@
   "entities": {
     "User": {
       "title": "User",
-      "description": "User profile information",
+      "description": "User profile information with role and subscription details",
       "type": "object",
       "properties": {
-        "uid": { "type": "string" },
+        "name": { "type": "string" },
         "email": { "type": "string" },
-        "displayName": { "type": "string" },
-        "stripeCustomerId": { "type": "string" },
-        "subscriptionStatus": { "type": "string", "enum": ["active", "inactive", "past_due"] },
+        "role": { "type": "string", "enum": ["client", "admin"] },
+        "subscription": {
+          "type": "object",
+          "properties": {
+            "plan": { "type": "string", "enum": ["free", "starter", "pro"] },
+            "limit": { "type": "number" }
+          }
+        },
+        "usage": {
+          "type": "object",
+          "properties": {
+            "analysisCount": { "type": "number" },
+            "lastReset": { "type": "string", "format": "date-time" }
+          }
+        },
         "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["uid", "email"]
+      "required": ["email", "role"]
     },
-    "Subscription": {
-      "title": "Subscription",
-      "description": "Stripe subscription details",
+    "Vehicle": {
+      "title": "Vehicle",
+      "description": "Vehicle stored in personal patio",
       "type": "object",
       "properties": {
-        "userId": { "type": "string" },
-        "stripeSubscriptionId": { "type": "string" },
-        "status": { "type": "string" },
-        "priceId": { "type": "string" },
-        "currentPeriodEnd": { "type": "string", "format": "date-time" }
+        "brand": { "type": "string" },
+        "model": { "type": "string" },
+        "year": { "type": "string" },
+        "fipeValue": { "type": "number" },
+        "auctionValue": { "type": "number" },
+        "margin": { "type": "number" },
+        "authorUid": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "details": { "type": "object" }
       },
-      "required": ["userId", "stripeSubscriptionId"]
+      "required": ["brand", "model", "authorUid"]
     }
   },
   "firestore": {
     "/users/{userId}": {
       "schema": "User",
-      "description": "User profile document"
+      "description": "User profile document and parameters"
     },
-    "/users/{userId}/subscriptions/{subId}": {
-      "schema": "Subscription",
-      "description": "User subscription history"
+    "/vehicles/{vehicleId}": {
+      "schema": "Vehicle",
+      "description": "Vehicles saved in user patios"
     }
   }
 }
