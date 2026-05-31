@@ -62,8 +62,11 @@ async function startServer() {
 
   app.post("/api/create-checkout-session", async (req, res) => {
     try {
-      const { priceId, customerEmail } = req.body;
+      const { priceId, customerEmail, origin } = req.body;
+      console.log(`🔑 Recebida solicitação de checkout: priceId=${priceId}, email=${customerEmail}`);
+      
       const stripeClient = getStripe();
+      const baseDomain = origin || process.env.APP_URL || "http://localhost:3000";
 
       const session = await stripeClient.checkout.sessions.create({
         payment_method_types: ["card"],
@@ -74,13 +77,15 @@ async function startServer() {
           },
         ],
         mode: "subscription",
-        success_url: `${process.env.APP_URL || "http://localhost:3000"}/success?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${process.env.APP_URL || "http://localhost:3000"}/cancel`,
+        success_url: `${baseDomain}/success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${baseDomain}/cancel`,
         customer_email: customerEmail,
       });
 
+      console.log(`✅ Sessão do Stripe criada com sucesso: ID=${session.id}`);
       res.json({ id: session.id, url: session.url });
     } catch (error: any) {
+      console.error(`❌ Erro ao criar Checkout Session: ${error.message}`);
       res.status(500).json({ error: error.message });
     }
   });
